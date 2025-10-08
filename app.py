@@ -25,7 +25,7 @@ DISASTER_DATA = [
     {'name': 'Nuclear Disasters', 'category': 'chemical', 'description': 'Accidents at nuclear facilities leading to the release of radioactive material.'},
     {'name': 'Forest Fires', 'category': 'accident', 'description': 'Uncontrolled fires in forests, posing a threat to flora, fauna, and human settlements.'},
     {'name': 'Urban Fires', 'category': 'accident', 'description': 'Major fires in urban areas, including residential and commercial buildings.'},
-    {'name: 'Mine Flooding', 'category': 'accident', 'description': 'Inundation of underground mines with water, trapping miners.'},
+    {'name': 'Mine Flooding', 'category': 'accident', 'description': 'Inundation of underground mines with water, trapping miners.'}, # <-- FIXED SYNTAX ERROR HERE
     {'name': 'Oil Spills', 'category': 'accident', 'description': 'Release of liquid petroleum hydrocarbon into the environment, causing ecological damage.'},
     {'name': 'Major Building Collapse', 'category': 'accident', 'description': 'Structural failure of large buildings, often in urban areas.'},
     {'name': 'Serial Bomb Blasts', 'category': 'accident', 'description': 'A series of coordinated terrorist bombings.'},
