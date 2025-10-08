@@ -1,8 +1,9 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import plotly.express as px # Using Plotly for better aesthetics and interactive charts in Streamlit
 
-# --- 1. DATA DEFINITIONS (Mirroring the original content) ---
+# --- 1. DATA DEFINITIONS ---
 
 # Disaster Data (32 types total)
 DISASTER_DATA = [
@@ -25,7 +26,7 @@ DISASTER_DATA = [
     {'name': 'Nuclear Disasters', 'category': 'chemical', 'description': 'Accidents at nuclear facilities leading to the release of radioactive material.'},
     {'name': 'Forest Fires', 'category': 'accident', 'description': 'Uncontrolled fires in forests, posing a threat to flora, fauna, and human settlements.'},
     {'name': 'Urban Fires', 'category': 'accident', 'description': 'Major fires in urban areas, including residential and commercial buildings.'},
-    {'name': 'Mine Flooding', 'category': 'accident', 'description': 'Inundation of underground mines with water, trapping miners.'}, # <-- FIXED SYNTAX ERROR HERE
+    {'name': 'Mine Flooding', 'category': 'accident', 'description': 'Inundation of underground mines with water, trapping miners.'}, 
     {'name': 'Oil Spills', 'category': 'accident', 'description': 'Release of liquid petroleum hydrocarbon into the environment, causing ecological damage.'},
     {'name': 'Major Building Collapse', 'category': 'accident', 'description': 'Structural failure of large buildings, often in urban areas.'},
     {'name': 'Serial Bomb Blasts', 'category': 'accident', 'description': 'A series of coordinated terrorist bombings.'},
@@ -56,7 +57,7 @@ CYCLE_STEPS = {
     'Reconstruction': 'The process of rebuilding communities, including "building back better" to be more resilient.'
 }
 
-# --- 2. STREAMLIT APP LAYOUT ---
+# --- 2. STREAMLIT APP LAYOUT & STYLING ---
 
 # Set wide layout and title
 st.set_page_config(
@@ -65,45 +66,90 @@ st.set_page_config(
     initial_sidebar_state="auto"
 )
 
-# Customizing the title with a little color (using unsafe_allow_html for inline styling)
+# Injecting Custom CSS for a better look (Creamy background, custom headers, card styling)
 st.markdown(
     """
     <style>
+    /* Main body background and font */
     .stApp {
-        background-color: #FDFBF8; 
+        background-color: #FDFBF8; /* Off-white/Creamy background */
+        color: #3f3f46; /* Gray-700 for text */
+        font-family: 'Inter', sans-serif;
     }
+    
+    /* Custom main header */
     .main-header {
         font-size: 2.5em;
-        font-weight: bold;
+        font-weight: 800;
         color: #c2410c; /* Orange-700 */
         text-align: center;
-        margin-bottom: 0.5em;
+        padding-top: 1rem;
     }
+    
+    /* Custom subheaders for sections */
     .subheader {
-        font-size: 1.5em;
+        font-size: 2em;
+        font-weight: 700;
+        color: #1f2937; /* Darker text for titles */
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+        border-bottom: 3px solid #f97316; /* Orange border */
+        padding-bottom: 0.5rem;
+    }
+    
+    /* Custom styling for the "cards" in the Disaster Types section */
+    .disaster-card {
+        background-color: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 15px;
+        border-left: 5px solid #fb923c; /* Light Orange accent */
+    }
+    .disaster-card h4 {
+        color: #c2410c;
         font-weight: 600;
-        color: #52525b; /* Gray-600 */
-        margin-top: 1.5em;
-        border-bottom: 2px solid #fed7aa; /* Light Orange for underline */
-        padding-bottom: 0.5em;
+        margin-bottom: 5px;
+    }
+    
+    /* Custom styling for key metrics boxes */
+    .metric-box {
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        margin-bottom: 20px;
     }
     .metric-value {
         font-size: 3em !important;
         font-weight: bold;
         color: #ea580c !important; /* Orange-600 */
     }
+    
+    /* Make Streamlit buttons orange */
+    div[data-baseweb="radio"] label {
+        border-radius: 20px !important;
+        padding: 8px 12px !important;
+        transition: background-color 0.3s;
+    }
+    div[data-baseweb="radio"] label:hover {
+        background-color: #ffe4c4;
+    }
     </style>
     """,
     unsafe_allow_html=True
 )
 
+# Header and Introduction
 st.markdown('<div class="main-header">DM in India: An Interactive Dashboard</div>', unsafe_allow_html=True)
 st.markdown(
     """
+    <p style='text-align: center; max-width: 900px; margin: 0 auto 2rem;'>
     India's unique geo-climatic conditions make it vulnerable to a wide range of natural and man-made disasters. 
     The **High Power Committee on Disaster Management** identified 32 distinct types. 
     This dashboard provides an interactive exploration of these hazards and the robust framework established to manage them.
-    """
+    </p>
+    """, unsafe_allow_html=True
 )
 
 st.divider()
@@ -111,49 +157,72 @@ st.divider()
 # --- 3. OVERVIEW SECTION ---
 st.markdown('<h2 class="subheader" id="overview">1. Overview of India\'s Disaster Landscape</h2>', unsafe_allow_html=True)
 
-# Use columns for Key Facts and Chart
-col1, col2 = st.columns([1, 1])
+# Container for Overview layout
+overview_container = st.container()
 
-with col1:
-    st.markdown("### Key Vulnerabilities")
-    
-    st.metric(
-        label="Drought Prone Agricultural Land",
-        value="68%",
-        delta="Risk to food security"
-    )
-    st.metric(
-        label="Coastline exposed to Cyclones",
-        value="7,516 km",
-        delta="Major coastal threat"
-    )
-    st.metric(
-        label="Seismic Zones (High Risk)",
-        value="4 Zones",
-        delta="Himalayan region highly vulnerable"
-    )
+with overview_container:
+    col1, col2 = st.columns([1, 1])
 
-with col2:
-    st.markdown("### Disaster Categories Breakdown (32 Types)")
-    st.bar_chart(
-        CHART_DATA, 
-        x='Category', 
-        y='Types', 
-        color='#c2410c' # Orange-700
-    )
-    st.info("The 32 disaster types are grouped into 5 categories for analysis.")
+    with col1:
+        st.markdown("### Key Vulnerabilities")
+        
+        # Using custom metric boxes for better visual appeal
+        st.markdown(
+            """
+            <div class='metric-box'>
+                <p class='text-xl text-gray-500'>Drought Prone Agricultural Land</p>
+                <p class='metric-value text-orange-600'>68%</p>
+                <p class='text-sm text-gray-600'>Risk to food security due to deficient rainfall.</p>
+            </div>
+            """, unsafe_allow_html=True
+        )
+        st.markdown(
+            """
+            <div class='metric-box'>
+                <p class='text-xl text-gray-500'>Coastline exposed to Cyclones</p>
+                <p class='metric-value text-blue-600'>7,516 km</p>
+                <p class='text-sm text-gray-600'>Major coastal threat from tropical storms and storm surges.</p>
+            </div>
+            """, unsafe_allow_html=True
+        )
+        st.markdown(
+            """
+            <div class='metric-box'>
+                <p class='text-xl text-gray-500'>Seismic Zones (High Risk)</p>
+                <p class='metric-value text-red-600'>4 Zones</p>
+                <p class='text-sm text-gray-600'>The Himalayan region is particularly vulnerable to high-intensity earthquakes.</p>
+            </div>
+            """, unsafe_allow_html=True
+        )
+
+    with col2:
+        st.markdown("### Disaster Categories Breakdown (32 Types)")
+        
+        # Using Plotly for a visually modern Doughnut Chart
+        fig = px.pie(
+            CHART_DATA, 
+            values='Types', 
+            names='Category', 
+            hole=.4, # Makes it a doughnut chart
+            color_discrete_sequence=px.colors.qualitative.T10 # Use a clean color palette
+        )
+        fig.update_traces(textposition='inside', textinfo='percent+label')
+        fig.update_layout(showlegend=True)
+        st.plotly_chart(fig, use_container_width=True)
+        
+        st.info("The 32 disaster types are grouped into 5 categories for holistic risk assessment.")
 
 st.divider()
 
 # --- 4. DISASTER TYPES SECTION ---
 st.markdown('<h2 class="subheader" id="types">2. Explore Disaster Types</h2>', unsafe_allow_html=True)
-st.markdown("Select a category below to filter and learn about the **32 specific disaster types**.")
+st.markdown("Select a category below to filter and learn about the **32 specific disaster types** identified by the national framework.")
 
 # Filter component
 filter_choice = st.radio(
     "Filter by Category:",
     options=['all', 'water', 'geological', 'chemical', 'accident', 'biological'],
-    format_func=lambda x: x.replace('_', ' ').title() if x != 'all' else 'All Types',
+    format_func=lambda x: x.replace('_', ' ').title() if x != 'all' else 'All Types (32)',
     horizontal=True,
     key="disaster_filter"
 )
@@ -166,18 +235,25 @@ else:
 
 st.markdown(f"**Showing {len(filtered_data)} Disaster Types:**")
 
-# Display filtered data in a grid layout
-cols = st.columns(4) # 4 columns for desktop view
+# Display filtered data using custom styled cards in columns
+num_cols = 4 
+cols = st.columns(num_cols) 
 col_index = 0
 
 for item in filtered_data:
-    # Cycle through the columns for distribution
     with cols[col_index]:
-        # Use an expander to simulate the "card" design and allow quick reading
-        with st.expander(f"**{item['name']}**"):
-            st.markdown(f"*{item['description']}*")
+        # Inject the custom styled HTML card
+        st.markdown(
+            f"""
+            <div class='disaster-card'>
+                <h4>{item['name']}</h4>
+                <p style='font-size: 0.85rem; color: #52525b;'>{item['description']}</p>
+            </div>
+            """, 
+            unsafe_allow_html=True
+        )
     
-    col_index = (col_index + 1) % 4 # Move to the next column
+    col_index = (col_index + 1) % num_cols # Move to the next column
 
 
 st.divider()
@@ -191,33 +267,32 @@ st.markdown(
     """
 )
 
-# Use Streamlit tabs for the Framework content (Policy, Act, Agencies)
-tab1, tab2, tab3 = st.tabs(["DM Cycle (Process)", "Policy & Legislation", "Key Agencies"])
+# Use Streamlit tabs for the Framework content
+tab1, tab2 = st.tabs(["DM Cycle (Process)", "Policy, Act & Agencies"])
 
 with tab1:
-    st.subheader("The Disaster Management Cycle")
-    st.markdown("Disaster management is a continuous cycle of activities.")
+    st.subheader("The Continuous Disaster Management Cycle")
+    st.markdown("Disaster management is a continuous loop. Click on any step to focus on its role.")
     
-    # Use columns to represent the cycle steps visually
-    cycle_cols = st.columns(len(CYCLE_STEPS))
+    # Use 3 columns for 6 steps, wrapping the content
+    cycle_cols = st.columns(3)
     
     for i, (step, description) in enumerate(CYCLE_STEPS.items()):
-        with cycle_cols[i]:
-            # Use st.info or st.success to visually highlight the step
-            st.info(step)
-            st.caption(description)
+        col = cycle_cols[i % 3]
+        
+        with col:
+            with st.container():
+                st.markdown(f"#### {step}")
+                st.info(description)
 
 
 with tab2:
-    st.subheader("Disaster Management Act, 2005 & National Policy")
+    st.subheader("Policy, Legislation, and Institutional Structure")
     
-    tab_content = st.radio(
-        "Select Focus Area:",
-        options=['National Policy', 'DM Act, 2005'],
-        horizontal=True
-    )
+    # Nesting TABS/EXPANDER inside the main tab for clean organization
+    policy_tab, act_tab, agency_tab = st.tabs(["National Policy", "DM Act, 2005", "Key Agencies"])
     
-    if tab_content == 'National Policy':
+    with policy_tab:
         st.markdown("### Vision")
         st.write("To build a safe and disaster-resilient India by developing a holistic, proactive, multi-disaster oriented, and technology-driven strategy.")
         st.markdown("### Core Objectives")
@@ -228,7 +303,7 @@ with tab2:
         * Ensure efficient response and relief, especially for vulnerable sections.
         """)
         
-    elif tab_content == 'DM Act, 2005':
+    with act_tab:
         st.markdown("### Purpose")
         st.write("Provides the institutional and legal framework for disaster management across India, establishing a clear chain of command.")
         st.markdown("### Institutional Structure")
@@ -238,18 +313,19 @@ with tab2:
         * **District Disaster Management Authority (DDMA):** Headed by the District Collector.
         """)
         
-with tab3:
-    st.subheader("Key Agencies in Disaster Response")
-    st.markdown("While States have the primary responsibility, the Central Government provides logistical and financial support.")
-    
-    st.markdown("### Key National Bodies")
-    st.markdown("""
-    * **Ministry of Home Affairs (DM Division):** Coordinates all central government efforts for disaster risk reduction.
-    * **National Disaster Response Force (NDRF):** A specialized force for responding to disaster situations.
-    * **National Institute of Disaster Management (NIDM):** Focuses on training, research, and capacity development.
-    """)
+    with agency_tab:
+        st.markdown("### Primary Responsibility")
+        st.write("While States have the primary responsibility, the Central Government provides logistical and financial support.")
+        
+        st.markdown("### Key National Bodies")
+        st.markdown("""
+        * **Ministry of Home Affairs (DM Division):** Coordinates all central government efforts for disaster risk reduction.
+        * **National Disaster Response Force (NDRF):** A specialized force for responding to disaster situations.
+        * **National Institute of Disaster Management (NIDM):** Focuses on training, research, and capacity development.
+        """)
 
 st.divider()
 
 st.markdown("---")
-st.markdown("Disclaimer: Data is based on the High Power Committee on Disaster Management report.")
+st.markdown("<p style='text-align: center; color: #9ca3af;'>An Interactive Dashboard on Disaster Management in India.</p>", unsafe_allow_html=True)
+
